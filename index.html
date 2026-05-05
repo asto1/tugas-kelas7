@@ -5,39 +5,28 @@ loadData();
 setInterval(loadData, 15000);
 
 async function loadData() {
-  try {
-    const res = await fetch(URL);
-    const text = await res.text();
+  const res = await fetch(URL);
+  const text = await res.text();
 
-    const data = parseCSV(text);
-    prosesData(data);
-  } catch (e) {
-    document.getElementById("hasil").innerHTML = "❌ Gagal load data";
-  }
+  const data = parseCSV(text);
+  prosesData(data);
 }
 
-// CSV parser aman (support koma dalam teks)
 function parseCSV(text) {
   const rows = text.split("\n").map(r =>
     r.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)
   );
 
-  const headers = rows[0].map(h => h.replace(/"/g,"").trim());
+  // 🔥 PAKAI BARIS KE-2 SEBAGAI HEADER
+  const headers = rows[1].map(h => h ? h.replace(/"/g,"").trim() : "");
 
-  return rows.slice(1).map(row => {
+  return rows.slice(2).map(row => {
     let obj = {};
     headers.forEach((h, i) => {
-      obj[h] = row[i] ? row[i].replace(/"/g,"").trim() : "";
+      if (h) obj[h] = row[i] ? row[i].replace(/"/g,"").trim() : "";
     });
     return obj;
   });
-}
-
-// ambil kolom fleksibel (tidak peduli kapital/spasi)
-function ambil(row, key) {
-  return Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase())
-    ? row[Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase())]
-    : "";
 }
 
 function kosong(val) {
@@ -48,25 +37,26 @@ function prosesData(data) {
   const hasil = data.map(row => {
     let kurang = [];
 
-    if (kosong(ambil(row,"6.6")) || kosong(ambil(row,"6.7"))) {
+    // 🔥 SESUAI HEADER ASLI KAMU
+    if (kosong(row["6.6 dan 6.7"])) {
       kurang.push("Mengerjakan aktivitas 6.6 dan 6.7 hal 21");
     }
 
-    if (kosong(ambil(row,"Catatan"))) {
+    if (kosong(row["Catatan"])) {
       kurang.push("Mencatat dan meringkas hal 8–21");
     }
 
     let asesmen = [];
-    if (kosong(ambil(row,"I"))) asesmen.push("I");
-    if (kosong(ambil(row,"II"))) asesmen.push("II");
-    if (kosong(ambil(row,"III"))) asesmen.push("III");
+    if (kosong(row["I"])) asesmen.push("I");
+    if (kosong(row["II"])) asesmen.push("II");
+    if (kosong(row["III"])) asesmen.push("III");
 
     if (asesmen.length > 0) {
       kurang.push(`Mengerjakan asesmen ${asesmen.join(", ")} (hal 29–31)`);
     }
 
     return {
-      nama: ambil(row,"Nama") || ambil(row,"Nama Siswa") || "-",
+      nama: row["NAMA"] || "-",
       kurang
     };
   }).filter(s => s.kurang.length > 0);
@@ -83,8 +73,12 @@ function tampilkan(data) {
     return;
   }
 
-  // SORT: prioritas siswa paling banyak kekurangan
+  // 🔥 SORT PRIORITAS
   data.sort((a,b) => b.kurang.length - a.kurang.length);
+
+  div.insertAdjacentHTML("beforeend",
+    `<h3>Total siswa belum tuntas: ${data.length}</h3>`
+  );
 
   data.forEach(siswa => {
     const card = document.createElement("div");
