@@ -32,12 +32,18 @@ h2 {
   padding: 15px;
   margin: 10px auto;
   border-radius: 10px;
-  max-width: 600px;
+  max-width: 650px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .nama {
   font-weight: bold;
+  font-size: 15px;
+}
+
+.kelas {
+  font-size: 13px;
+  color: #555;
   margin-bottom: 8px;
 }
 
@@ -80,13 +86,12 @@ async function loadData() {
   }
 }
 
-// ================= PARSER CSV =================
+// ================= PARSER =================
 function parseCSV(text) {
   const rows = text.split("\n").map(r =>
     r.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
   );
 
-  // cari header yang mengandung "nama"
   const headerIndex = rows.findIndex(r =>
     r && r.some(c => c && c.toLowerCase().includes("nama"))
   );
@@ -112,46 +117,35 @@ function belumTuntas(val) {
 
   val = val.toString().trim().toLowerCase();
 
-  // nilai dianggap tuntas
   if (val === "1" || val === "✓" || val === "v" || val === "done") {
     return false;
   }
 
-  return (
-    val === "" ||
-    val === "0" ||
-    val === "-" ||
-    val === "null"
-  );
+  return val === "" || val === "0" || val === "-" || val === "null";
 }
 
-// ambil nama dengan fallback aman
-function ambilNama(row) {
-  const keys = Object.keys(row);
-
-  // cari kolom "nama"
-  const keyNama = keys.find(k =>
-    k.toLowerCase().includes("nama")
-  );
-
-  if (keyNama && row[keyNama]) {
-    return row[keyNama];
-  }
-
-  // fallback: kolom ke-2 (biasanya NAMA)
-  if (keys.length > 1) {
-    return row[keys[1]];
-  }
-
-  return "-";
-}
-
-// ambil nilai fleksibel
+// ambil kolom fleksibel
 function getVal(row, key) {
   const found = Object.keys(row).find(k =>
     k.toLowerCase().includes(key.toLowerCase())
   );
   return found ? row[found] : "";
+}
+
+// ambil nama
+function ambilNama(row) {
+  const key = Object.keys(row).find(k =>
+    k.toLowerCase().includes("nama")
+  );
+  return key ? row[key] : "-";
+}
+
+// 🔥 ambil kelas (baru)
+function ambilKelas(row) {
+  const key = Object.keys(row).find(k =>
+    k.toLowerCase().includes("kelas")
+  );
+  return key ? row[key] : "-";
 }
 
 // ================= PROSES =================
@@ -178,6 +172,7 @@ function prosesData(data) {
 
     return {
       nama: ambilNama(row),
+      kelas: ambilKelas(row),
       kurang
     };
   }).filter(s => s.kurang.length > 0);
@@ -195,7 +190,6 @@ function tampilkan(data) {
     return;
   }
 
-  // urutkan prioritas
   data.sort((a,b) => b.kurang.length - a.kurang.length);
 
   div.innerHTML += `<div class="summary">Total siswa belum tuntas: ${data.length}</div>`;
@@ -205,7 +199,9 @@ function tampilkan(data) {
     card.className = "card";
 
     card.innerHTML = `
-      <div class="nama">${index+1}. ${siswa.nama} (${siswa.kurang.length} tugas)</div>
+      <div class="nama">${index+1}. ${siswa.nama}</div>
+      <div class="kelas">Kelas: ${siswa.kelas}</div>
+      <div><strong>${siswa.kurang.length} tugas belum tuntas</strong></div>
       <ul>
         ${siswa.kurang.map(k => `<li class="kurang">${k}</li>`).join("")}
       </ul>
