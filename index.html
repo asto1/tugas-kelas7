@@ -2,38 +2,78 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Monitoring Siswa Auto</title>
+  <title>Monitoring Tugas Siswa</title>
+
   <style>
-    body { font-family: Arial; background:#f4f6f9; padding:20px; }
-    .card {
-      background:white;
-      padding:15px;
-      margin:10px 0;
-      border-radius:10px;
-      box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    body {
+      font-family: Arial;
+      background: #f4f6f9;
+      padding: 20px;
     }
-    .nama { font-weight:bold; }
-    .kurang { color:red; }
+
+    h2 {
+      text-align: center;
+    }
+
+    .info {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin: 10px auto;
+      border-radius: 10px;
+      max-width: 600px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .nama {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .kurang {
+      color: red;
+    }
+
+    .done {
+      text-align:center;
+      font-weight:bold;
+      color: green;
+    }
   </style>
 </head>
 <body>
 
-<h2>📊 Monitoring Tugas Siswa (Auto)</h2>
+<h2>📊 Monitoring Tugas Siswa</h2>
+<div class="info">Auto sinkron dari Google Sheets</div>
 
-<div id="hasil">Loading data...</div>
+<div id="hasil">⏳ Memuat data...</div>
 
 <script>
 const URL = "https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpddddZYJNVVO_P2c-M/export?format=csv";
 
-fetch(URL)
-  .then(res => res.text())
-  .then(text => {
-    const data = parseCSV(text);
-    prosesData(data);
-  });
+loadData();
+setInterval(loadData, 15000); // auto refresh 15 detik
+
+function loadData() {
+  fetch(URL)
+    .then(res => res.text())
+    .then(text => {
+      const data = parseCSV(text);
+      prosesData(data);
+    })
+    .catch(() => {
+      document.getElementById("hasil").innerHTML = "❌ Gagal load data";
+    });
+}
 
 function parseCSV(text) {
-  const rows = text.split("\n").map(r => r.split(","));
+  const rows = text.trim().split("\n").map(r => r.split(","));
   const headers = rows[0];
 
   return rows.slice(1).map(row => {
@@ -43,29 +83,33 @@ function parseCSV(text) {
   });
 }
 
+function kosong(val) {
+  return !val || val === "" || val === "0";
+}
+
 function prosesData(data) {
   const hasil = data.map(row => {
     let kurang = [];
 
-    if (!row["6.6"] || !row["6.7"]) {
+    if (kosong(row["6.6"]) || kosong(row["6.7"])) {
       kurang.push("Mengerjakan aktivitas 6.6 dan 6.7 hal 21");
     }
 
-    if (!row["Catatan"]) {
+    if (kosong(row["Catatan"])) {
       kurang.push("Mencatat dan meringkas hal 8–21");
     }
 
     let asesmen = [];
-    if (!row["I"]) asesmen.push("I");
-    if (!row["II"]) asesmen.push("II");
-    if (!row["III"]) asesmen.push("III");
+    if (kosong(row["I"])) asesmen.push("I");
+    if (kosong(row["II"])) asesmen.push("II");
+    if (kosong(row["III"])) asesmen.push("III");
 
     if (asesmen.length > 0) {
       kurang.push(`Mengerjakan asesmen ${asesmen.join(", ")} (hal 29–31)`);
     }
 
     return {
-      nama: row["Nama"],
+      nama: row["Nama"] || row["NAMA"] || "-",
       kurang
     };
   }).filter(s => s.kurang.length > 0);
@@ -78,7 +122,7 @@ function tampilkan(data) {
   div.innerHTML = "";
 
   if (data.length === 0) {
-    div.innerHTML = "<p>Semua siswa sudah tuntas 👍</p>";
+    div.innerHTML = "<div class='done'>Semua siswa sudah tuntas 👍</div>";
     return;
   }
 
