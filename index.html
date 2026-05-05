@@ -1,43 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Monitoring Tugas Siswa</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f9;
+  padding: 20px;
+}
+
+h2 {
+  text-align: center;
+}
+
+.info {
+  text-align: center;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.summary {
+  text-align:center;
+  font-weight:bold;
+  margin-bottom:15px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  margin: 10px auto;
+  border-radius: 10px;
+  max-width: 600px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.nama {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.kurang {
+  color: red;
+}
+
+.done {
+  text-align:center;
+  color: green;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h2>📊 Monitoring Tugas Siswa</h2>
+<div class="info">Auto sinkron dari Google Sheets</div>
+
+<div id="hasil">⏳ Memuat data...</div>
+
 <script>
 const URL = "https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpddddZYJNVVO_P2c-M/export?format=csv";
 
 loadData();
 setInterval(loadData, 15000);
 
+// ================= LOAD DATA =================
 async function loadData() {
-  const res = await fetch(URL);
-  const text = await res.text();
+  try {
+    const res = await fetch(URL);
+    const text = await res.text();
 
-  const data = parseCSV(text);
-  prosesData(data);
+    const data = parseCSV(text);
+    prosesData(data);
+
+  } catch (e) {
+    document.getElementById("hasil").innerHTML = "❌ Gagal mengambil data";
+  }
 }
 
+// ================= PARSE CSV (AMAN) =================
 function parseCSV(text) {
   const rows = text.split("\n").map(r =>
-    r.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)
+    r.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
   );
 
-  // 🔥 PAKAI BARIS KE-2 SEBAGAI HEADER
+  // gunakan BARIS KE-2 sebagai header
   const headers = rows[1].map(h => h ? h.replace(/"/g,"").trim() : "");
 
   return rows.slice(2).map(row => {
     let obj = {};
     headers.forEach((h, i) => {
-      if (h) obj[h] = row[i] ? row[i].replace(/"/g,"").trim() : "";
+      if (h) {
+        obj[h] = row[i] ? row[i].replace(/"/g,"").trim() : "";
+      }
     });
     return obj;
   });
 }
 
+// ================= HELPER =================
 function kosong(val) {
   return !val || val === "" || val === "0";
 }
 
+// ================= PROSES DATA =================
 function prosesData(data) {
   const hasil = data.map(row => {
     let kurang = [];
 
-    // 🔥 SESUAI HEADER ASLI KAMU
     if (kosong(row["6.6 dan 6.7"])) {
       kurang.push("Mengerjakan aktivitas 6.6 dan 6.7 hal 21");
     }
@@ -59,26 +131,26 @@ function prosesData(data) {
       nama: row["NAMA"] || "-",
       kurang
     };
-  }).filter(s => s.kurang.length > 0);
+  })
+  .filter(s => s.kurang.length > 0);
 
   tampilkan(hasil);
 }
 
+// ================= TAMPILKAN =================
 function tampilkan(data) {
   const div = document.getElementById("hasil");
   div.innerHTML = "";
 
   if (data.length === 0) {
-    div.innerHTML = "<h3 style='text-align:center;color:green'>Semua siswa tuntas 👍</h3>";
+    div.innerHTML = "<div class='done'>Semua siswa sudah tuntas 👍</div>";
     return;
   }
 
-  // 🔥 SORT PRIORITAS
+  // SORT PRIORITAS
   data.sort((a,b) => b.kurang.length - a.kurang.length);
 
-  div.insertAdjacentHTML("beforeend",
-    `<h3>Total siswa belum tuntas: ${data.length}</h3>`
-  );
+  div.innerHTML += `<div class="summary">Total siswa belum tuntas: ${data.length}</div>`;
 
   data.forEach(siswa => {
     const card = document.createElement("div");
@@ -95,3 +167,6 @@ function tampilkan(data) {
   });
 }
 </script>
+
+</body>
+</html>
