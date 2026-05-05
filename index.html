@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Monitoring Tugas Siswa</title>
-<canvas id="chartKelas" style="max-width:600px; margin:20px auto; display:block;"></canvas>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
@@ -21,13 +22,13 @@ h2 {
 .info {
   text-align: center;
   color: #666;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .summary {
   text-align:center;
   font-weight:bold;
-  margin-bottom:15px;
+  margin:15px 0;
 }
 
 .card {
@@ -39,20 +40,9 @@ h2 {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.nama {
-  font-weight: bold;
-  font-size: 15px;
-}
-
-.kelas {
-  font-size: 13px;
-  color: #555;
-  margin-bottom: 8px;
-}
-
-.kurang {
-  color: red;
-}
+.nama { font-weight: bold; }
+.kelas { font-size: 13px; color: #555; margin-bottom: 8px; }
+.kurang { color: red; }
 
 .done {
   text-align:center;
@@ -71,8 +61,10 @@ button {
   cursor:pointer;
 }
 
-button:hover {
-  background:#0056b3;
+canvas {
+  max-width:600px;
+  margin:20px auto;
+  display:block;
 }
 </style>
 </head>
@@ -80,54 +72,21 @@ button:hover {
 <body>
 
 <h2>📊 Monitoring Tugas Siswa</h2>
+<div class="info">Auto sinkron dari Google Sheets</div>
 
-<div class="info">
-Berikut ini daftar siswa yang tugasnya belum tuntas.<br>
-Selanjutnya untuk <b>semua siswa kelas 7</b> yang merasa belum mengirimkan email silahkan kirim email,<br> 
-jika merasa sudah silahkan <b>cek di menu terkirim atau send untuk memastikan email yang ditulis sudah sesuai,</b> <br>
-karena <b>mengirim email termasuk salah satu tugas yang akan mendapatkan nilai 80 jika berhasil terkirim<br>
-Untuk siswa yang <b>LKS-nya</b> masih dikumpulkan silahkan kerjakan melalui buku catatan. Untuk lembar soalnya<br>
-akan dikirimkan segera melalui link yang akan di update dibawah ini.<br>
-</div>
+<!-- Grafik -->
+<canvas id="chartKelas"></canvas>
 
 <button onclick="toggleData()" id="btnToggle">Tampilkan Data</button>
-
 <div id="hasil" style="display:none;">⏳ Memuat data...</div>
 
 <script>
 const URL = "https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpddddZYJNVVO_P2c-M/export?format=csv";
-let chart;
+
+let chart; // ✅ GLOBAL
 
 loadData();
 setInterval(loadData, 15000);
-
-// ================= Grafik =================
-function renderChart(total, belum) {
-  const tuntas = total - belum;
-
-  const ctx = document.getElementById("chartKelas").getContext("2d");
-
-  if (chart) {
-    chart.destroy();
-  }
-
-  chart = new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Tuntas", "Belum Tuntas"],
-      datasets: [{
-        data: [tuntas, belum],
-      }]
-    },
-    options: {
-      plugins: {
-        legend: {
-          position: "bottom"
-        }
-      }
-    }
-  });
-}
 
 // ================= TOGGLE =================
 function toggleData() {
@@ -152,8 +111,8 @@ async function loadData() {
     const data = parseCSV(text);
     prosesData(data);
 
-  } catch (e) {
-    document.getElementById("hasil").innerHTML = "❌ Gagal mengambil data";
+  } catch {
+    document.getElementById("hasil").innerHTML = "❌ Gagal load data";
   }
 }
 
@@ -184,9 +143,14 @@ function parseCSV(text) {
 function belumTuntas(val) {
   if (!val) return true;
 
-  val = val.toString().trim().toLowerCase();
+  val = val.toString().trim();
 
-  return !(val === "1" || val === "✓" || val === "v" || val === "done");
+  // jika ada isi → dianggap tuntas
+  if (val !== "" && val !== "0" && val !== "-") {
+    return false;
+  }
+
+  return true;
 }
 
 function getVal(row, key) {
@@ -197,28 +161,24 @@ function getVal(row, key) {
 }
 
 function ambilNama(row) {
-  return getVal(row, "nama") || "-";
+  return getVal(row,"nama") || "-";
 }
 
 function ambilKelas(row) {
-  return getVal(row, "kelas") || "-";
+  return getVal(row,"kelas") || "-";
 }
 
 // ================= PROSES =================
 function prosesData(data) {
   const hasil = data.map(row => {
-  const total = data.length;
-  const belum = hasil.length;
-
-renderChart(total, belum);
     let kurang = [];
 
-    if (belumTuntas(getVal(row, "6.6"))) {
+    if (belumTuntas(getVal(row, "6.6 dan 6.7"))) {
       kurang.push("Aktivitas 6.6 & 6.7 hal 21");
     }
 
     if (belumTuntas(getVal(row, "Catatan"))) {
-      kurang.push("Catatan materi hal 8 - 21");
+      kurang.push("Catatan materi hal 8–21");
     }
 
     let asesmen = [];
@@ -227,7 +187,7 @@ renderChart(total, belum);
     if (belumTuntas(getVal(row,"III"))) asesmen.push("III");
 
     if (asesmen.length > 0) {
-      kurang.push(`Asesmen ${asesmen.join(", ")} hal 29 - 31`);
+      kurang.push(`Asesmen ${asesmen.join(", ")} hal 29–31`);
     }
 
     return {
@@ -237,22 +197,54 @@ renderChart(total, belum);
     };
   }).filter(s => s.kurang.length > 0);
 
-  tampilkan(hasil);
+  tampilkan(data.length, hasil);
+}
+
+// ================= GRAFIK =================
+function renderChart(total, belum) {
+  const tuntas = total - belum;
+  const ctx = document.getElementById("chartKelas");
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Tuntas", "Belum Tuntas"],
+      datasets: [{
+        data: [tuntas, belum]
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { position: "bottom" }
+      }
+    }
+  });
 }
 
 // ================= TAMPIL =================
-function tampilkan(data) {
+function tampilkan(total, data) {
   const div = document.getElementById("hasil");
   div.innerHTML = "";
 
+  renderChart(total, data.length);
+
+  const persen = Math.round(((total - data.length) / total) * 100);
+
+  div.innerHTML += `
+    <div class="summary">
+      Total belum tuntas: ${data.length} dari ${total}<br>
+      Progress kelas: ${persen}%
+    </div>
+  `;
+
   if (data.length === 0) {
-    div.innerHTML = "<div class='done'>Semua siswa sudah tuntas 👍</div>";
+    div.innerHTML += "<div class='done'>Semua siswa sudah tuntas 👍</div>";
     return;
   }
 
   data.sort((a,b) => b.kurang.length - a.kurang.length);
-
-  div.innerHTML += `<div class="summary">Total belum tuntas: ${data.length}</div>`;
 
   data.forEach((siswa, index) => {
     const card = document.createElement("div");
@@ -261,7 +253,7 @@ function tampilkan(data) {
     card.innerHTML = `
       <div class="nama">${index+1}. ${siswa.nama}</div>
       <div class="kelas">Kelas: ${siswa.kelas}</div>
-      <div><strong>${siswa.kurang.length} tugas</strong></div>
+      <div><strong>${siswa.kurang.length} tugas belum tuntas</strong></div>
       <ul>
         ${siswa.kurang.map(k => `<li class="kurang">${k}</li>`).join("")}
       </ul>
