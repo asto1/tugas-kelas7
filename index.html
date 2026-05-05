@@ -66,7 +66,7 @@ const URL = "https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpd
 loadData();
 setInterval(loadData, 15000);
 
-// ================= LOAD DATA =================
+// ================= LOAD =================
 async function loadData() {
   try {
     const res = await fetch(URL);
@@ -80,16 +80,22 @@ async function loadData() {
   }
 }
 
-// ================= PARSE CSV (AMAN) =================
+// ================= PARSER CSV AMAN =================
 function parseCSV(text) {
   const rows = text.split("\n").map(r =>
     r.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
   );
 
-  // gunakan BARIS KE-2 sebagai header
-  const headers = rows[1].map(h => h ? h.replace(/"/g,"").trim() : "");
+  // 🔥 otomatis cari baris header (yang ada kata "nama")
+  const headerIndex = rows.findIndex(r =>
+    r && r.some(c => c && c.toLowerCase().includes("nama"))
+  );
 
-  return rows.slice(2).map(row => {
+  const headers = rows[headerIndex].map(h =>
+    h ? h.replace(/"/g,"").trim() : ""
+  );
+
+  return rows.slice(headerIndex + 1).map(row => {
     let obj = {};
     headers.forEach((h, i) => {
       if (h) {
@@ -105,23 +111,35 @@ function kosong(val) {
   return !val || val === "" || val === "0";
 }
 
-// ================= PROSES DATA =================
+// 🔥 ambil nama fleksibel
+function ambilNama(row) {
+  const key = Object.keys(row).find(k =>
+    k.toLowerCase().includes("nama")
+  );
+
+  if (key) return row[key];
+
+  const first = Object.values(row).find(v => v && v.trim() !== "");
+  return first || "-";
+}
+
+// ================= PROSES =================
 function prosesData(data) {
   const hasil = data.map(row => {
     let kurang = [];
 
-    if (kosong(row["6.6 dan 6.7"])) {
+    if (kosong(getVal(row, "6.6 dan 6.7"))) {
       kurang.push("Mengerjakan aktivitas 6.6 dan 6.7 hal 21");
     }
 
-    if (kosong(row["Catatan"])) {
+    if (kosong(getVal(row, "Catatan"))) {
       kurang.push("Mencatat dan meringkas hal 8–21");
     }
 
     let asesmen = [];
-    if (kosong(row["I"])) asesmen.push("I");
-    if (kosong(row["II"])) asesmen.push("II");
-    if (kosong(row["III"])) asesmen.push("III");
+    if (kosong(getVal(row,"I"))) asesmen.push("I");
+    if (kosong(getVal(row,"II"))) asesmen.push("II");
+    if (kosong(getVal(row,"III"))) asesmen.push("III");
 
     if (asesmen.length > 0) {
       kurang.push(`Mengerjakan asesmen ${asesmen.join(", ")} (hal 29–31)`);
@@ -131,10 +149,17 @@ function prosesData(data) {
       nama: ambilNama(row),
       kurang
     };
-  })
-  .filter(s => s.kurang.length > 0);
+  }).filter(s => s.kurang.length > 0);
 
   tampilkan(hasil);
+}
+
+// 🔥 ambil kolom fleksibel
+function getVal(row, key) {
+  const found = Object.keys(row).find(k =>
+    k.toLowerCase().includes(key.toLowerCase())
+  );
+  return found ? row[found] : "";
 }
 
 // ================= TAMPILKAN =================
@@ -147,20 +172,7 @@ function tampilkan(data) {
     return;
   }
 
-  function ambilNama(row) {
-  // cari key yang mengandung "nama"
-  const key = Object.keys(row).find(k =>
-    k.toLowerCase().includes("nama")
-  );
-
-  if (key) return row[key];
-
-  // fallback: ambil kolom pertama yang ada isi
-  const firstValue = Object.values(row).find(v => v && v.trim() !== "");
-  return firstValue || "-";
-}
-
-  // SORT PRIORITAS
+  // 🔥 urutkan prioritas
   data.sort((a,b) => b.kurang.length - a.kurang.length);
 
   div.innerHTML += `<div class="summary">Total siswa belum tuntas: ${data.length}</div>`;
