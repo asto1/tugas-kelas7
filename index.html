@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Monitoring Tugas Siswa</title>
 
 <style>
@@ -18,8 +19,7 @@ h2 {
 .info {
   text-align: center;
   color: #666;
-  margin-bottom: 20px;
-  display: none;
+  margin-bottom: 15px;
 }
 
 .summary {
@@ -57,28 +57,55 @@ h2 {
   color: green;
   font-weight: bold;
 }
+
+button {
+  display:block;
+  margin: 15px auto;
+  padding:10px 20px;
+  border:none;
+  border-radius:6px;
+  background:#007bff;
+  color:white;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#0056b3;
+}
 </style>
 </head>
 
 <body>
 
 <h2>📊 Monitoring Tugas Siswa</h2>
-<div class="info">Berikut ini list nama yang tugasnya belum tuntas untuk segera diselesaikan. Dan bagi yang namanya 
-  tidak tercantum silahkan review kembali semua tugas dan catatannya sebagai persiapan menghadapi SAS Genap.</div>
-  <div><b>Selanjutnya untuk semua siswa kelas 7 yang merasa belum mengirimkan email silahkan kirim email, 
-    jika merasa sudah silahkan cek di menu terkirim atau send untuk memastikan email yang ditulis sudah sesuai, 
-    karena itu juga salah satu tugas yang akan mendapatkan nilai 80 jika berhasil terkirim</b></div>
 
-<button onclick="myFunction()">Tampilkan</button>
-<div id="hasil">⏳ Memuat data...</div>
-  <div>Untuk siswa yang lks nya masih dikumpulkan silahkan kerjakan melalui buku catatan. Untuk lembar soalnya 
-    akan dikirimkan segera melalui link yang akan di update dibawah ini.</div>
+<div class="info">
+Berikut ini daftar siswa yang tugasnya belum tuntas.
+</div>
+
+<button onclick="toggleData()" id="btnToggle">Tampilkan Data</button>
+
+<div id="hasil" style="display:none;">⏳ Memuat data...</div>
 
 <script>
 const URL = "https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpddddZYJNVVO_P2c-M/export?format=csv";
 
 loadData();
 setInterval(loadData, 15000);
+
+// ================= TOGGLE =================
+function toggleData() {
+  const div = document.getElementById("hasil");
+  const btn = document.getElementById("btnToggle");
+
+  if (div.style.display === "none") {
+    div.style.display = "block";
+    btn.innerText = "Sembunyikan Data";
+  } else {
+    div.style.display = "none";
+    btn.innerText = "Tampilkan Data";
+  }
+}
 
 // ================= LOAD =================
 async function loadData() {
@@ -94,35 +121,24 @@ async function loadData() {
   }
 }
 
-  //================ button ================
-function myFunction() {
-  var x = document.getElementById("hasil");
-  if (x.style.display === "none") {
-    x.style.display = "block";
-  } else {
-    x.style.display = "none";
-  }
-}
 // ================= PARSER =================
 function parseCSV(text) {
-  const rows = text.split("\n").map(r =>
-    r.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
-  );
+  const rows = text.split("\n")
+    .map(r => r.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g))
+    .filter(r => r && r.length > 0);
 
   const headerIndex = rows.findIndex(r =>
-    r && r.some(c => c && c.toLowerCase().includes("nama"))
+    r.some(c => c && c.toLowerCase().includes("nama"))
   );
 
   const headers = rows[headerIndex].map(h =>
-    h ? h.replace(/"/g,"").trim() : ""
+    h.replace(/"/g,"").trim()
   );
 
   return rows.slice(headerIndex + 1).map(row => {
     let obj = {};
     headers.forEach((h, i) => {
-      if (h) {
-        obj[h] = row[i] ? row[i].replace(/"/g,"").trim() : "";
-      }
+      obj[h] = row[i] ? row[i].replace(/"/g,"").trim() : "";
     });
     return obj;
   });
@@ -134,14 +150,9 @@ function belumTuntas(val) {
 
   val = val.toString().trim().toLowerCase();
 
-  if (val === "1" || val === "✓" || val === "v" || val === "done") {
-    return false;
-  }
-
-  return val === "" || val === "0" || val === "-" || val === "null";
+  return !(val === "1" || val === "✓" || val === "v" || val === "done");
 }
 
-// ambil kolom fleksibel
 function getVal(row, key) {
   const found = Object.keys(row).find(k =>
     k.toLowerCase().includes(key.toLowerCase())
@@ -149,20 +160,12 @@ function getVal(row, key) {
   return found ? row[found] : "";
 }
 
-// ambil nama
 function ambilNama(row) {
-  const key = Object.keys(row).find(k =>
-    k.toLowerCase().includes("nama")
-  );
-  return key ? row[key] : "-";
+  return getVal(row, "nama") || "-";
 }
 
-// 🔥 ambil kelas (baru)
 function ambilKelas(row) {
-  const key = Object.keys(row).find(k =>
-    k.toLowerCase().includes("kelas")
-  );
-  return key ? row[key] : "-";
+  return getVal(row, "kelas") || "-";
 }
 
 // ================= PROSES =================
@@ -171,11 +174,11 @@ function prosesData(data) {
     let kurang = [];
 
     if (belumTuntas(getVal(row, "6.6"))) {
-      kurang.push("Mengerjakan aktivitas 6.6 dan 6.7 hal 21");
+      kurang.push("Aktivitas 6.6 & 6.7");
     }
 
     if (belumTuntas(getVal(row, "Catatan"))) {
-      kurang.push("Mencatat dan meringkas hal 8–21");
+      kurang.push("Catatan materi");
     }
 
     let asesmen = [];
@@ -184,7 +187,7 @@ function prosesData(data) {
     if (belumTuntas(getVal(row,"III"))) asesmen.push("III");
 
     if (asesmen.length > 0) {
-      kurang.push(`Mengerjakan asesmen ${asesmen.join(", ")} (hal 29–31)`);
+      kurang.push(`Asesmen ${asesmen.join(", ")}`);
     }
 
     return {
@@ -209,7 +212,7 @@ function tampilkan(data) {
 
   data.sort((a,b) => b.kurang.length - a.kurang.length);
 
-  div.innerHTML += `<div class="summary">Total siswa belum tuntas: ${data.length}</div>`;
+  div.innerHTML += `<div class="summary">Total belum tuntas: ${data.length}</div>`;
 
   data.forEach((siswa, index) => {
     const card = document.createElement("div");
@@ -218,7 +221,7 @@ function tampilkan(data) {
     card.innerHTML = `
       <div class="nama">${index+1}. ${siswa.nama}</div>
       <div class="kelas">Kelas: ${siswa.kelas}</div>
-      <div><strong>${siswa.kurang.length} tugas belum tuntas</strong></div>
+      <div><strong>${siswa.kurang.length} tugas</strong></div>
       <ul>
         ${siswa.kurang.map(k => `<li class="kurang">${k}</li>`).join("")}
       </ul>
