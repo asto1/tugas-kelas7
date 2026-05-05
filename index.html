@@ -80,13 +80,13 @@ async function loadData() {
   }
 }
 
-// ================= PARSER CSV AMAN =================
+// ================= PARSER CSV =================
 function parseCSV(text) {
   const rows = text.split("\n").map(r =>
     r.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
   );
 
-  // 🔥 otomatis cari baris header (yang ada kata "nama")
+  // cari header yang mengandung "nama"
   const headerIndex = rows.findIndex(r =>
     r && r.some(c => c && c.toLowerCase().includes("nama"))
   );
@@ -107,20 +107,51 @@ function parseCSV(text) {
 }
 
 // ================= HELPER =================
-function kosong(val) {
-  return !val || val === "" || val === "0";
+function belumTuntas(val) {
+  if (!val) return true;
+
+  val = val.toString().trim().toLowerCase();
+
+  // nilai dianggap tuntas
+  if (val === "1" || val === "✓" || val === "v" || val === "done") {
+    return false;
+  }
+
+  return (
+    val === "" ||
+    val === "0" ||
+    val === "-" ||
+    val === "null"
+  );
 }
 
-// 🔥 ambil nama fleksibel
+// ambil nama dengan fallback aman
 function ambilNama(row) {
-  const key = Object.keys(row).find(k =>
+  const keys = Object.keys(row);
+
+  // cari kolom "nama"
+  const keyNama = keys.find(k =>
     k.toLowerCase().includes("nama")
   );
 
-  if (key) return row[key];
+  if (keyNama && row[keyNama]) {
+    return row[keyNama];
+  }
 
-  const first = Object.values(row).find(v => v && v.trim() !== "");
-  return first || "-";
+  // fallback: kolom ke-2 (biasanya NAMA)
+  if (keys.length > 1) {
+    return row[keys[1]];
+  }
+
+  return "-";
+}
+
+// ambil nilai fleksibel
+function getVal(row, key) {
+  const found = Object.keys(row).find(k =>
+    k.toLowerCase().includes(key.toLowerCase())
+  );
+  return found ? row[found] : "";
 }
 
 // ================= PROSES =================
@@ -128,18 +159,18 @@ function prosesData(data) {
   const hasil = data.map(row => {
     let kurang = [];
 
-    if (kosong(getVal(row, "6.6 dan 6.7"))) {
+    if (belumTuntas(getVal(row, "6.6"))) {
       kurang.push("Mengerjakan aktivitas 6.6 dan 6.7 hal 21");
     }
 
-    if (kosong(getVal(row, "Catatan"))) {
+    if (belumTuntas(getVal(row, "Catatan"))) {
       kurang.push("Mencatat dan meringkas hal 8–21");
     }
 
     let asesmen = [];
-    if (kosong(getVal(row,"I"))) asesmen.push("I");
-    if (kosong(getVal(row,"II"))) asesmen.push("II");
-    if (kosong(getVal(row,"III"))) asesmen.push("III");
+    if (belumTuntas(getVal(row,"I"))) asesmen.push("I");
+    if (belumTuntas(getVal(row,"II"))) asesmen.push("II");
+    if (belumTuntas(getVal(row,"III"))) asesmen.push("III");
 
     if (asesmen.length > 0) {
       kurang.push(`Mengerjakan asesmen ${asesmen.join(", ")} (hal 29–31)`);
@@ -154,15 +185,7 @@ function prosesData(data) {
   tampilkan(hasil);
 }
 
-// 🔥 ambil kolom fleksibel
-function getVal(row, key) {
-  const found = Object.keys(row).find(k =>
-    k.toLowerCase().includes(key.toLowerCase())
-  );
-  return found ? row[found] : "";
-}
-
-// ================= TAMPILKAN =================
+// ================= TAMPIL =================
 function tampilkan(data) {
   const div = document.getElementById("hasil");
   div.innerHTML = "";
@@ -172,17 +195,17 @@ function tampilkan(data) {
     return;
   }
 
-  // 🔥 urutkan prioritas
+  // urutkan prioritas
   data.sort((a,b) => b.kurang.length - a.kurang.length);
 
   div.innerHTML += `<div class="summary">Total siswa belum tuntas: ${data.length}</div>`;
 
-  data.forEach(siswa => {
+  data.forEach((siswa, index) => {
     const card = document.createElement("div");
     card.className = "card";
 
     card.innerHTML = `
-      <div class="nama">${siswa.nama} (${siswa.kurang.length} tugas)</div>
+      <div class="nama">${index+1}. ${siswa.nama} (${siswa.kurang.length} tugas)</div>
       <ul>
         ${siswa.kurang.map(k => `<li class="kurang">${k}</li>`).join("")}
       </ul>
