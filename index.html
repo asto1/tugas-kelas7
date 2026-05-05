@@ -81,6 +81,11 @@ button:hover {
 
 <div class="info">
 Berikut ini daftar siswa yang tugasnya belum tuntas.
+Selanjutnya untuk semua siswa kelas 7 yang merasa belum mengirimkan email silahkan kirim email,<br> 
+jika merasa sudah silahkan cek di menu terkirim atau send untuk memastikan email yang ditulis sudah sesuai, <br>
+karena itu juga salah satu tugas yang akan mendapatkan nilai 80 jika berhasil terkirim<<br>
+Untuk siswa yang lks nya masih dikumpulkan silahkan kerjakan melalui buku catatan. Untuk lembar soalnya<br>
+akan dikirimkan segera melalui link yang akan di update dibawah ini.<br>
 </div>
 
 <button onclick="toggleData()" id="btnToggle">Tampilkan Data</button>
@@ -174,11 +179,11 @@ function prosesData(data) {
     let kurang = [];
 
     if (belumTuntas(getVal(row, "6.6"))) {
-      kurang.push("Aktivitas 6.6 & 6.7");
+      kurang.push("Aktivitas 6.6 & 6.7 hal 21");
     }
 
     if (belumTuntas(getVal(row, "Catatan"))) {
-      kurang.push("Catatan materi");
+      kurang.push("Catatan materi hal 8 - 21");
     }
 
     let asesmen = [];
@@ -187,7 +192,7 @@ function prosesData(data) {
     if (belumTuntas(getVal(row,"III"))) asesmen.push("III");
 
     if (asesmen.length > 0) {
-      kurang.push(`Asesmen ${asesmen.join(", ")}`);
+      kurang.push(`Asesmen ${asesmen.join(", ")} hal 29 - 31`);
     }
 
     return {
