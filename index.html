@@ -16,23 +16,28 @@ async function loadData() {
   }
 }
 
+// CSV parser aman (support koma dalam teks)
 function parseCSV(text) {
-  const rows = text.split("\n").map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+  const rows = text.split("\n").map(r =>
+    r.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)
+  );
 
-  const headers = rows[0].map(h => h.trim());
+  const headers = rows[0].map(h => h.replace(/"/g,"").trim());
 
   return rows.slice(1).map(row => {
     let obj = {};
     headers.forEach((h, i) => {
-      obj[h] = row[i] ? row[i].replace(/"/g, "").trim() : "";
+      obj[h] = row[i] ? row[i].replace(/"/g,"").trim() : "";
     });
     return obj;
   });
 }
 
-function get(row, key) {
-  const found = Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase());
-  return found ? row[found] : "";
+// ambil kolom fleksibel (tidak peduli kapital/spasi)
+function ambil(row, key) {
+  return Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase())
+    ? row[Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase())]
+    : "";
 }
 
 function kosong(val) {
@@ -43,25 +48,25 @@ function prosesData(data) {
   const hasil = data.map(row => {
     let kurang = [];
 
-    if (kosong(get(row,"6.6")) || kosong(get(row,"6.7"))) {
+    if (kosong(ambil(row,"6.6")) || kosong(ambil(row,"6.7"))) {
       kurang.push("Mengerjakan aktivitas 6.6 dan 6.7 hal 21");
     }
 
-    if (kosong(get(row,"Catatan"))) {
+    if (kosong(ambil(row,"Catatan"))) {
       kurang.push("Mencatat dan meringkas hal 8–21");
     }
 
     let asesmen = [];
-    if (kosong(get(row,"I"))) asesmen.push("I");
-    if (kosong(get(row,"II"))) asesmen.push("II");
-    if (kosong(get(row,"III"))) asesmen.push("III");
+    if (kosong(ambil(row,"I"))) asesmen.push("I");
+    if (kosong(ambil(row,"II"))) asesmen.push("II");
+    if (kosong(ambil(row,"III"))) asesmen.push("III");
 
     if (asesmen.length > 0) {
       kurang.push(`Mengerjakan asesmen ${asesmen.join(", ")} (hal 29–31)`);
     }
 
     return {
-      nama: get(row,"Nama") || get(row,"Nama Siswa") || "-",
+      nama: ambil(row,"Nama") || ambil(row,"Nama Siswa") || "-",
       kurang
     };
   }).filter(s => s.kurang.length > 0);
@@ -74,16 +79,19 @@ function tampilkan(data) {
   div.innerHTML = "";
 
   if (data.length === 0) {
-    div.innerHTML = "<div style='text-align:center;color:green;font-weight:bold'>Semua siswa sudah tuntas 👍</div>";
+    div.innerHTML = "<h3 style='text-align:center;color:green'>Semua siswa tuntas 👍</h3>";
     return;
   }
+
+  // SORT: prioritas siswa paling banyak kekurangan
+  data.sort((a,b) => b.kurang.length - a.kurang.length);
 
   data.forEach(siswa => {
     const card = document.createElement("div");
     card.className = "card";
 
     card.innerHTML = `
-      <div class="nama">${siswa.nama}</div>
+      <div class="nama">${siswa.nama} (${siswa.kurang.length} tugas)</div>
       <ul>
         ${siswa.kurang.map(k => `<li class="kurang">${k}</li>`).join("")}
       </ul>
