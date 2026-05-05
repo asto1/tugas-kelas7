@@ -128,7 +128,7 @@ function prosesData(data) {
     }
 
     return {
-      nama: row["NAMA"] || "-",
+      nama: ambilNama(row),
       kurang
     };
   })
@@ -146,6 +146,19 @@ function tampilkan(data) {
     div.innerHTML = "<div class='done'>Semua siswa sudah tuntas 👍</div>";
     return;
   }
+
+  function ambilNama(row) {
+  // cari key yang mengandung "nama"
+  const key = Object.keys(row).find(k =>
+    k.toLowerCase().includes("nama")
+  );
+
+  if (key) return row[key];
+
+  // fallback: ambil kolom pertama yang ada isi
+  const firstValue = Object.values(row).find(v => v && v.trim() !== "");
+  return firstValue || "-";
+}
 
   // SORT PRIORITAS
   data.sort((a,b) => b.kurang.length - a.kurang.length);
