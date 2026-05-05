@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Monitoring Tugas Siswa</title>
+<canvas id="chartKelas" style="max-width:600px; margin:20px auto; display:block;"></canvas>
 
 <style>
 body {
@@ -94,9 +96,38 @@ akan dikirimkan segera melalui link yang akan di update dibawah ini.<br>
 
 <script>
 const URL = "https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpddddZYJNVVO_P2c-M/export?format=csv";
+let chart;
 
 loadData();
 setInterval(loadData, 15000);
+
+// ================= Grafik =================
+function renderChart(total, belum) {
+  const tuntas = total - belum;
+
+  const ctx = document.getElementById("chartKelas").getContext("2d");
+
+  if (chart) {
+    chart.destroy();
+  }
+
+  chart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Tuntas", "Belum Tuntas"],
+      datasets: [{
+        data: [tuntas, belum],
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          position: "bottom"
+        }
+      }
+    }
+  });
+}
 
 // ================= TOGGLE =================
 function toggleData() {
@@ -176,6 +207,10 @@ function ambilKelas(row) {
 // ================= PROSES =================
 function prosesData(data) {
   const hasil = data.map(row => {
+  const total = data.length;
+  const belum = hasil.length;
+
+renderChart(total, belum);
     let kurang = [];
 
     if (belumTuntas(getVal(row, "6.6"))) {
