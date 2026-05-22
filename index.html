@@ -4,13 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Monitoring Tugas Siswa</title>
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- PapaParse -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <style>
 body{
   font-family:Arial,sans-serif;
@@ -18,26 +13,19 @@ body{
   margin:0;
   padding:20px;
 }
-
-h2{
-  text-align:center;
-  color:#333;
-}
-
+h2{ text-align:center; color:#333; }
 .info{
   text-align:center;
   color:#555;
   margin-bottom:15px;
   line-height:1.6;
 }
-
 .summary{
   text-align:center;
   font-weight:bold;
   margin:15px 0;
   font-size:16px;
 }
-
 .card{
   background:white;
   padding:15px;
@@ -47,26 +35,10 @@ h2{
   box-shadow:0 2px 8px rgba(0,0,0,0.1);
   transition:.3s;
 }
-
-.card:hover{
-  transform:translateY(-2px);
-}
-
-.nama{
-  font-weight:bold;
-  font-size:17px;
-}
-
-.kelas{
-  font-size:13px;
-  color:#666;
-  margin-bottom:10px;
-}
-
-.kurang{
-  color:#dc3545;
-}
-
+.card:hover{ transform:translateY(-2px); }
+.nama{ font-weight:bold; font-size:17px; }
+.kelas{ font-size:13px; color:#666; margin-bottom:10px; }
+.kurang{ color:#dc3545; }
 .done{
   text-align:center;
   color:green;
@@ -74,7 +46,6 @@ h2{
   font-size:18px;
   margin-top:20px;
 }
-
 button{
   display:block;
   margin:15px auto;
@@ -87,18 +58,8 @@ button{
   font-size:15px;
   transition:.3s;
 }
-
-button:hover{
-  background:#0056b3;
-}
-
-canvas{
-  max-width:500px;
-  margin:20px auto;
-  display:block;
-}
-
-/* Progress Bar */
+button:hover{ background:#0056b3; }
+canvas{ max-width:500px; margin:20px auto; display:block; }
 .progress-wrap{
   width:100%;
   max-width:600px;
@@ -108,20 +69,13 @@ canvas{
   margin:15px auto;
   overflow:hidden;
 }
-
 .progress-bar{
   height:100%;
   width:0%;
   background:#28a745;
   transition:.5s;
 }
-
-/* Search */
-.search-box{
-  text-align:center;
-  margin:20px 0;
-}
-
+.search-box{ text-align:center; margin:20px 0; }
 .search-box input{
   padding:10px;
   width:300px;
@@ -129,8 +83,6 @@ canvas{
   border-radius:8px;
   border:1px solid #ccc;
 }
-
-/* Footer */
 .simple-footer{
   text-align:center;
   padding:20px;
@@ -140,101 +92,77 @@ canvas{
   background:#555;
   font-size:14px;
 }
-
-.footer-links{
-  margin-top:8px;
-}
-
-#statusUpdate{
-  text-align:center;
-  color:#666;
-  margin-top:10px;
-}
-
+.footer-links{ margin-top:8px; }
+#statusUpdate{ text-align:center; color:#666; margin-top:10px; }
 @media(max-width:600px){
-
-  body{
-    padding:10px;
-  }
-
-  .card{
-    width:95%;
-    padding:12px;
-  }
-
-  button{
-    width:100%;
-  }
-
+  body{ padding:10px; }
+  .card{ width:95%; padding:12px; }
+  button{ width:100%; }
 }
 </style>
 </head>
-
 <body>
 
 <h2>📊 Monitoring Tugas Siswa</h2>
 
 <div class="info">
-Berikut ini daftar siswa yang tugasnya belum dan sudah tuntas.<br>
-Bagi yang namanya tidak tercantum berarti sudah tuntas.<br>
-Silakan mengulas kembali materi informatika untuk persiapan SAS Genap.
+  Berikut ini daftar siswa yang tugasnya belum dan sudah tuntas.<br>
+  Bagi yang namanya tidak tercantum berarti sudah tuntas.<br>
+  Silakan mengulas kembali materi informatika untuk persiapan SAS Genap.
 </div>
 
-<!-- Grafik -->
 <canvas id="chartKelas"></canvas>
 
-<!-- Progress -->
 <div class="progress-wrap">
   <div class="progress-bar" id="progressBar"></div>
 </div>
 
-<!-- Status -->
 <div id="statusUpdate"></div>
 
-<!-- Search -->
 <div class="search-box">
   <input type="text" id="searchNama" placeholder="Cari nama siswa..." onkeyup="filterSiswa()">
 </div>
 
-<!-- Toggle -->
-<button onclick="toggleData()" id="btnToggle">
-  Sembunyikan Data
-</button>
+<button onclick="toggleData()" id="btnToggle">Sembunyikan Data</button>
 
-<!-- Hasil -->
 <div id="hasil">⏳ Memuat data...</div>
 
-<!-- Info Tambahan -->
 <div class="info">
-Untuk semua siswa kelas 7 yang merasa belum mengirim email silakan kirim kembali.<br>
-Pastikan email sudah benar dengan mengecek folder terkirim/send.
+  Untuk semua siswa kelas 7 yang merasa belum mengirim email silakan kirim kembali.<br>
+  Pastikan email sudah benar dengan mengecek folder terkirim/send.
 </div>
 
-<!-- Tombol Quiz -->
 <button onclick="window.open('https://wayground.com/join?gc=64762481&source=liveDashboard','_blank')">
   🎯 Mulai Quiz
 </button>
 
 <script>
+// =============================================
+// Kolom berdasarkan INDEKS (0-based), bukan nama
+// Struktur sheet:
+// [0] NAMA  [1] KELAS  [2] STS INFOR  [3] Ket  [4] EMAIL
+// [5] Ket   [6] 6.6 dan 6.7  [7] Catatan  [8] Skor(tugas1)
+// [9] I     [10] II   [11] III   [12] Skor(asesmen)
+// =============================================
+
 const URL =
-"https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpddddZYJNVVO_P2c-M/gviz/tq?tqx=out:csv";
+  "https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpddddZYJNVVO_P2c-M/gviz/tq?tqx=out:csv";
 
 let chart;
-let semuaData = [];
+let semuaData  = [];  // hanya siswa belum tuntas
+let totalSiswa = 0;   // semua siswa (untuk progress & grafik)
 
 loadData();
 setInterval(loadData, 15000);
 
 // ================= TOGGLE =================
 function toggleData(){
-
   const div = document.getElementById("hasil");
   const btn = document.getElementById("btnToggle");
-
   if(div.style.display === "none"){
     div.style.display = "block";
     btn.innerText = "Sembunyikan Data";
-  }else{
+  } else {
     div.style.display = "none";
     btn.innerText = "Tampilkan Data";
   }
@@ -242,273 +170,166 @@ function toggleData(){
 
 // ================= LOAD DATA =================
 async function loadData(){
-
-  try{
-
-    document.getElementById("statusUpdate").innerHTML =
-    "🔄 Memperbarui data...";
-
-    const res = await fetch(URL);
-
+  try {
+    document.getElementById("statusUpdate").innerHTML = "🔄 Memperbarui data...";
+    const res  = await fetch(URL);
     const text = await res.text();
-
-    const data = parseCSV(text);
-
-    prosesData(data);
-
+    const rows = parseCSV(text);
+    prosesData(rows);
     document.getElementById("statusUpdate").innerHTML =
-    "✅ Update terakhir: " +
-    new Date().toLocaleTimeString();
-
-  }catch(err){
-
-    document.getElementById("hasil").innerHTML =
-    "❌ Gagal memuat data";
-
+      "✅ Update terakhir: " + new Date().toLocaleTimeString();
+  } catch(err) {
+    document.getElementById("hasil").innerHTML = "❌ Gagal memuat data";
   }
 }
 
 // ================= PARSE CSV =================
+// Gunakan header:false agar tidak ada masalah header duplikat
+// (Ket muncul 2x, Skor muncul 2x)
+// Baris pertama = header, dibuang dengan slice(1)
 function parseCSV(text){
-
-  const parsed = Papa.parse(text,{
-    header:true,
-    skipEmptyLines:true
+  const parsed = Papa.parse(text, {
+    header: false,
+    skipEmptyLines: true
   });
-
-  return parsed.data;
+  return parsed.data.slice(1); // buang baris header
 }
 
 // ================= HELPER =================
 function belumTuntas(val){
-
-  if(!val) return true;
-
+  if(val === undefined || val === null) return true;
   val = val.toString().trim();
-
-  if(val !== "" && val !== "0" && val !== "-"){
-    return false;
-  }
-
-  return true;
-}
-
-function getVal(row,key){
-
-  const found = Object.keys(row).find(k =>
-    k.toLowerCase().includes(key.toLowerCase())
-  );
-
-  return found ? row[found] : "";
-}
-
-function ambilNama(row){
-  return getVal(row,"nama") || "-";
-}
-
-function ambilKelas(row){
-  return getVal(row,"kelas") || "-";
+  // kosong, "0", atau "-" dianggap belum tuntas
+  return (val === "" || val === "0" || val === "-");
 }
 
 // ================= PROSES DATA =================
-function prosesData(data){
+function prosesData(rows){
+  totalSiswa = rows.length;
 
-  const hasil = data.map(row => {
+  const hasil = rows.map(row => {
+    // Akses langsung per indeks — AMAN dari masalah nama duplikat / includes salah
+    const nama  = (row[0] || "").trim() || "-";
+    const kelas = (row[1] || "").trim() || "-";
 
     let kurang = [];
 
-    if(belumTuntas(getVal(row,"6.6 dan 6.7"))){
+    // Kolom [6] = 6.6 dan 6.7
+    if(belumTuntas(row[6])){
       kurang.push("Aktivitas 6.6 & 6.7 hal 21");
     }
 
-    if(belumTuntas(getVal(row,"Catatan"))){
+    // Kolom [7] = Catatan
+    if(belumTuntas(row[7])){
       kurang.push("Catatan materi hal 8–21");
     }
 
+    // Kolom [9]=I  [10]=II  [11]=III
     let asesmen = [];
-
-    if(belumTuntas(getVal(row,"I"))) asesmen.push("I");
-    if(belumTuntas(getVal(row,"II"))) asesmen.push("II");
-    if(belumTuntas(getVal(row,"III"))) asesmen.push("III");
+    if(belumTuntas(row[9]))  asesmen.push("I");
+    if(belumTuntas(row[10])) asesmen.push("II");
+    if(belumTuntas(row[11])) asesmen.push("III");
 
     if(asesmen.length > 0){
-      kurang.push(
-        `Asesmen ${asesmen.join(", ")} hal 29–31`
-      );
+      kurang.push("Asesmen " + asesmen.join(", ") + " hal 29–31");
     }
 
-    return{
-      nama:ambilNama(row),
-      kelas:ambilKelas(row),
-      kurang
-    };
-
+    return { nama, kelas, kurang };
   }).filter(s => s.kurang.length > 0);
 
   semuaData = hasil;
-
-  tampilkan(data.length, hasil);
+  tampilkan(totalSiswa, hasil);
 }
 
 // ================= GRAFIK =================
 function renderChart(total, belum){
-
   const tuntas = total - belum;
-
-  const ctx =
-  document.getElementById("chartKelas");
-
+  const ctx = document.getElementById("chartKelas");
   if(chart) chart.destroy();
-
-  chart = new Chart(ctx,{
-    type:"doughnut",
-
-    data:{
-      labels:["Tuntas","Belum Tuntas"],
-
-      datasets:[{
-        data:[tuntas,belum],
-
-        backgroundColor:[
-          "#28a745",
-          "#dc3545"
-        ]
+  chart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Tuntas", "Belum Tuntas"],
+      datasets: [{
+        data: [tuntas, belum],
+        backgroundColor: ["#28a745", "#dc3545"]
       }]
     },
-
-    options:{
-      responsive:true,
-
-      plugins:{
-        legend:{
-          position:"bottom"
-        }
-      }
+    options: {
+      responsive: true,
+      plugins: { legend: { position: "bottom" } }
     }
   });
 }
 
 // ================= TAMPIL =================
-function tampilkan(total,data){
-
+function tampilkan(total, data){
   const div = document.getElementById("hasil");
-
   div.innerHTML = "";
 
-  renderChart(total,data.length);
+  renderChart(total, data.length);
 
   const persen = total > 0
-    ? Math.round(
-      ((total - data.length) / total) * 100
-    )
+    ? Math.round(((total - data.length) / total) * 100)
     : 0;
 
-  document.getElementById("progressBar")
-    .style.width = persen + "%";
+  document.getElementById("progressBar").style.width = persen + "%";
 
   div.innerHTML += `
     <div class="summary">
-      Total belum tuntas:
-      ${data.length} dari ${total}<br>
-      Progress kelas:
-      ${persen}%
+      Total belum tuntas: ${data.length} dari ${total}<br>
+      Progress kelas: ${persen}%
     </div>
   `;
 
   if(data.length === 0){
-
-    div.innerHTML += `
-      <div class="done">
-        Semua siswa sudah tuntas 👍
-      </div>
-    `;
-
+    div.innerHTML += `<div class="done">Semua siswa sudah tuntas 👍</div>`;
     return;
   }
 
-  data.sort((a,b) => {
-
+  // Urutkan: terbanyak kurang dulu, lalu alfabet
+  data.sort((a, b) => {
     if(b.kurang.length !== a.kurang.length){
       return b.kurang.length - a.kurang.length;
     }
-
     return a.nama.localeCompare(b.nama);
   });
 
-  data.forEach((siswa,index) => {
-
-    const card =
-    document.createElement("div");
-
+  data.forEach((siswa, index) => {
+    const card = document.createElement("div");
     card.className = "card";
-
     card.innerHTML = `
-      <div class="nama">
-        ${index+1}. ${siswa.nama}
-      </div>
-
-      <div class="kelas">
-        Kelas: ${siswa.kelas}
-      </div>
-
-      <div>
-        <strong>
-          ${siswa.kurang.length}
-          tugas belum tuntas
-        </strong>
-      </div>
-
+      <div class="nama">${index + 1}. ${siswa.nama}</div>
+      <div class="kelas">Kelas: ${siswa.kelas}</div>
+      <div><strong>${siswa.kurang.length} tugas belum tuntas</strong></div>
       <ul>
-        ${siswa.kurang.map(k =>
-          `<li class="kurang">${k}</li>`
-        ).join("")}
+        ${siswa.kurang.map(k => `<li class="kurang">${k}</li>`).join("")}
       </ul>
     `;
-
     div.appendChild(card);
   });
 }
 
 // ================= SEARCH =================
+// Gunakan totalSiswa (semua siswa), bukan semuaData.length
 function filterSiswa(){
-
-  const keyword =
-  document.getElementById("searchNama")
-    .value
-    .toLowerCase();
-
+  const keyword = document.getElementById("searchNama").value.toLowerCase();
   const filtered = semuaData.filter(s =>
     s.nama.toLowerCase().includes(keyword)
   );
-
-  tampilkan(
-    semuaData.length + (
-      document.querySelectorAll(".done").length
-    ),
-    filtered
-  );
+  tampilkan(totalSiswa, filtered);
 }
 </script>
 
 <footer class="simple-footer">
-
-  &copy;
-  <span id="tahun"></span>
-
-  Portal Tugas Informatika
-  Kelas 7 & 9
+  &copy; <span id="tahun"></span>
+  Portal Tugas Informatika Kelas 7 &amp; 9
   SMP Maarif NU Dukuhwaru
-
-  <div class="footer-links">
-    By Agus Purwanto
-  </div>
-
+  <div class="footer-links">By Agus Purwanto</div>
 </footer>
 
 <script>
-document.getElementById("tahun")
-.innerHTML = new Date().getFullYear();
+document.getElementById("tahun").innerHTML = new Date().getFullYear();
 </script>
-
 </body>
 </html>
