@@ -4,332 +4,780 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Monitoring Tugas Siswa</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
-body{
-  font-family:Arial,sans-serif;
-  background:#f4f6f9;
-  margin:0;
-  padding:20px;
+:root {
+  --bg: #f0f4ff;
+  --card: #ffffff;
+  --primary: #4361ee;
+  --primary-dark: #3046c5;
+  --danger: #ef233c;
+  --success: #06d6a0;
+  --text: #1b1b2f;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --shadow: 0 4px 20px rgba(67,97,238,0.10);
 }
-h2{ text-align:center; color:#333; }
-.info{
-  text-align:center;
-  color:#555;
-  margin-bottom:15px;
-  line-height:1.6;
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
 }
-.summary{
-  text-align:center;
-  font-weight:bold;
-  margin:15px 0;
-  font-size:16px;
+
+/* ===== HEADER ===== */
+.header {
+  background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+  padding: 32px 20px 60px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
 }
-.card{
-  background:white;
-  padding:15px;
-  margin:12px auto;
-  border-radius:12px;
-  max-width:650px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
-  transition:.3s;
+.header::before {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+  top: -120px; right: -80px;
 }
-.card:hover{ transform:translateY(-2px); }
-.nama{ font-weight:bold; font-size:17px; }
-.kelas{ font-size:13px; color:#666; margin-bottom:10px; }
-.kurang{ color:#dc3545; }
-.done{
-  text-align:center;
-  color:green;
-  font-weight:bold;
-  font-size:18px;
-  margin-top:20px;
+.header::after {
+  content: '';
+  position: absolute;
+  width: 250px; height: 250px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+  bottom: -80px; left: -40px;
 }
-button{
-  display:block;
-  margin:15px auto;
-  padding:10px 20px;
-  border:none;
-  border-radius:8px;
-  background:#007bff;
-  color:white;
-  cursor:pointer;
-  font-size:15px;
-  transition:.3s;
+.header h1 {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+  position: relative; z-index: 1;
 }
-button:hover{ background:#0056b3; }
-canvas{ max-width:500px; margin:20px auto; display:block; }
-.progress-wrap{
-  width:100%;
-  max-width:600px;
-  height:22px;
-  background:#ddd;
-  border-radius:30px;
-  margin:15px auto;
-  overflow:hidden;
+.header p {
+  color: rgba(255,255,255,0.80);
+  margin-top: 8px;
+  font-size: 14px;
+  position: relative; z-index: 1;
+  line-height: 1.6;
 }
-.progress-bar{
-  height:100%;
-  width:0%;
-  background:#28a745;
-  transition:.5s;
+
+/* ===== MAIN CONTAINER ===== */
+.container {
+  max-width: 700px;
+  margin: -30px auto 0;
+  padding: 0 16px 40px;
+  position: relative; z-index: 2;
 }
-.search-box{ text-align:center; margin:20px 0; }
-.search-box input{
-  padding:10px;
-  width:300px;
-  max-width:90%;
-  border-radius:8px;
-  border:1px solid #ccc;
+
+/* ===== STATS CARDS ===== */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
 }
-.simple-footer{
-  text-align:center;
-  padding:20px;
-  margin-top:50px;
-  border-top:1px solid #ddd;
-  color:white;
-  background:#555;
-  font-size:14px;
+.stat-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px 12px;
+  text-align: center;
+  box-shadow: var(--shadow);
 }
-.footer-links{ margin-top:8px; }
-#statusUpdate{ text-align:center; color:#666; margin-top:10px; }
-@media(max-width:600px){
-  body{ padding:10px; }
-  .card{ width:95%; padding:12px; }
-  button{ width:100%; }
+.stat-card .stat-num {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.stat-card .stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.stat-total .stat-num { color: var(--primary); }
+.stat-belum .stat-num { color: var(--danger); }
+.stat-tuntas .stat-num { color: var(--success); }
+
+/* ===== PROGRESS ===== */
+.progress-section {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.progress-track {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), #02c39a);
+  border-radius: 99px;
+  width: 0%;
+  transition: width 0.8s cubic-bezier(.4,0,.2,1);
+}
+
+/* ===== CHART ===== */
+.chart-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.chart-card canvas { max-width: 260px; margin: 0 auto; display: block; }
+.chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+/* ===== FILTER KELAS ===== */
+.filter-section {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.filter-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.kelas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  padding: 6px 16px;
+  border-radius: 99px;
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.chip:hover { border-color: var(--primary); color: var(--primary); }
+.chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(67,97,238,0.30);
+}
+.chip.all.active {
+  background: var(--text);
+  border-color: var(--text);
+}
+
+/* ===== SEARCH ===== */
+.search-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.search-wrap input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-wrap input:focus { border-color: var(--primary); }
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 18px;
+}
+
+/* ===== STUDENT CARDS ===== */
+.student-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--danger);
+  animation: fadeUp 0.3s ease both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.student-card .s-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.s-nama {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text);
+}
+.s-kelas {
+  font-size: 11px;
+  background: #f0f4ff;
+  color: var(--primary);
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1.5px solid #c7d2fe;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.s-badge {
+  font-size: 11px;
+  background: #fff0f3;
+  color: var(--danger);
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1.5px solid #fecdd3;
+  white-space: nowrap;
+}
+.s-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+}
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--danger);
+  font-weight: 600;
+}
+.task-item::before {
+  content: '✗';
+  font-size: 11px;
+  background: #fff0f3;
+  border: 1.5px solid #fecdd3;
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ===== DONE STATE ===== */
+.all-done {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 40px 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--success);
+}
+.all-done .icon { font-size: 48px; margin-bottom: 12px; }
+.all-done h3 { font-family: 'Poppins', sans-serif; color: var(--success); font-size: 1.2rem; }
+.all-done p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+/* ===== ACTION BUTTONS ===== */
+.actions { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.btn {
+  flex: 1;
+  min-width: 130px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(67,97,238,0.30);
+}
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.btn-outline {
+  background: var(--card);
+  color: var(--text);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ===== STATUS ===== */
+.status-bar {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  text-align: center;
+  padding: 24px 20px;
+  background: #1b1b2f;
+  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+  margin-top: 20px;
+}
+footer strong { color: rgba(255,255,255,0.9); }
+
+/* ===== NOTICE BOX ===== */
+.notice {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #92400e;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+.notice strong { color: #78350f; }
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .stat-card { padding: 12px 8px; }
+  .stat-card .stat-num { font-size: 1.4rem; }
+  .actions { flex-direction: column; }
+  .btn { min-width: 100%; }
 }
 </style>
 </head>
 <body>
 
-<h2>📊 Monitoring Tugas Siswa</h2>
-
-<div class="info">
-  Berikut ini daftar siswa yang tugasnya belum dan sudah tuntas.<br>
-  Bagi yang namanya tidak tercantum berarti sudah tuntas.<br>
-  Silakan mengulas kembali materi informatika untuk persiapan SAS Genap.
+<div class="header">
+  <h1>📊 Monitoring Tugas Siswa</h1>
+  <p>Kelas 7 — SMP Maarif NU Dukuhwaru<br>
+  Persiapan SAS Genap · Informatika</p>
 </div>
 
-<canvas id="chartKelas"></canvas>
+<div class="container">
 
-<div class="progress-wrap">
-  <div class="progress-bar" id="progressBar"></div>
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card stat-total">
+      <div class="stat-num" id="statTotal">—</div>
+      <div class="stat-label">Total Siswa</div>
+    </div>
+    <div class="stat-card stat-belum">
+      <div class="stat-num" id="statBelum">—</div>
+      <div class="stat-label">Belum Tuntas</div>
+    </div>
+    <div class="stat-card stat-tuntas">
+      <div class="stat-num" id="statTuntas">—</div>
+      <div class="stat-label">Sudah Tuntas</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section">
+    <div class="progress-label">
+      <span>Progress Ketuntasan</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-card">
+    <div class="chart-title">Distribusi Kelas</div>
+    <canvas id="chartKelas" height="200"></canvas>
+  </div>
+
+  <!-- Filter Kelas -->
+  <div class="filter-section">
+    <div class="filter-title">🏫 Filter Berdasarkan Kelas</div>
+    <div class="kelas-chips" id="kelasChips">
+      <button class="chip all active" onclick="setKelas('semua', this)">Semua Kelas</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchNama" placeholder="Cari nama siswa..." oninput="filterSiswa()">
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusUpdate">⏳ Memuat data...</div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-outline" onclick="toggleData()" id="btnToggle">👁 Sembunyikan</button>
+    <button class="btn btn-primary" onclick="window.open('https://wayground.com/join?gc=64762481&source=liveDashboard','_blank')">🎯 Mulai Quiz</button>
+  </div>
+
+  <!-- Notice -->
+  <div class="notice">
+    ℹ️ <strong>Perhatian:</strong> Siswa yang namanya tidak tercantum berarti sudah tuntas. Bagi yang merasa belum mengirim email, silakan kirim kembali dan pastikan sudah benar dengan mengecek folder <em>Terkirim/Sent</em>.
+  </div>
+
+  <!-- Data List -->
+  <div id="hasil">
+    <div class="all-done">
+      <div class="icon">⏳</div>
+      <h3>Memuat data...</h3>
+      <p>Harap tunggu sebentar</p>
+    </div>
+  </div>
+
 </div>
 
-<div id="statusUpdate"></div>
-
-<div class="search-box">
-  <input type="text" id="searchNama" placeholder="Cari nama siswa..." onkeyup="filterSiswa()">
-</div>
-
-<button onclick="toggleData()" id="btnToggle">Sembunyikan Data</button>
-
-<div id="hasil">⏳ Memuat data...</div>
-
-<div class="info">
-  Untuk semua siswa kelas 7 yang merasa belum mengirim email silakan kirim kembali.<br>
-  Pastikan email sudah benar dengan mengecek folder terkirim/send.
-</div>
-
-<button onclick="window.open('https://wayground.com/join?gc=64762481&source=liveDashboard','_blank')">
-  🎯 Mulai Quiz
-</button>
+<footer>
+  &copy; <span id="tahun"></span>
+  <strong>Portal Tugas Informatika Kelas 7 &amp; 9</strong><br>
+  SMP Maarif NU Dukuhwaru · By Agus Purwanto
+</footer>
 
 <script>
-// =============================================
-// Kolom berdasarkan INDEKS (0-based), bukan nama
-// Struktur sheet:
-// [0] NAMA  [1] KELAS  [2] STS INFOR  [3] Ket  [4] EMAIL
-// [5] Ket   [6] 6.6 dan 6.7  [7] Catatan  [8] Skor(tugas1)
-// [9] I     [10] II   [11] III   [12] Skor(asesmen)
-// =============================================
-
-const URL =
+const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1Ldjko3p6M3XaUdi-uS9xZ-DhQpddddZYJNVVO_P2c-M/gviz/tq?tqx=out:csv";
 
 let chart;
-let semuaData  = [];  // hanya siswa belum tuntas
-let totalSiswa = 0;   // semua siswa (untuk progress & grafik)
+let semuaData    = [];   // siswa belum tuntas (full list)
+let totalSiswa   = 0;
+let activeKelas  = 'semua';
+let dataVisible  = true;
+let kelasSet     = new Set();
 
 loadData();
 setInterval(loadData, 15000);
+document.getElementById("tahun").textContent = new Date().getFullYear();
 
-// ================= TOGGLE =================
-function toggleData(){
+// ─── TOGGLE ─────────────────────────────────────────
+function toggleData() {
+  dataVisible = !dataVisible;
   const div = document.getElementById("hasil");
   const btn = document.getElementById("btnToggle");
-  if(div.style.display === "none"){
-    div.style.display = "block";
-    btn.innerText = "Sembunyikan Data";
-  } else {
-    div.style.display = "none";
-    btn.innerText = "Tampilkan Data";
-  }
+  div.style.display = dataVisible ? "block" : "none";
+  btn.textContent   = dataVisible ? "👁 Sembunyikan" : "👁 Tampilkan";
 }
 
-// ================= LOAD DATA =================
-async function loadData(){
+// ─── LOAD DATA ───────────────────────────────────────
+async function loadData() {
   try {
-    document.getElementById("statusUpdate").innerHTML = "🔄 Memperbarui data...";
-    const res  = await fetch(URL);
+    document.getElementById("statusUpdate").textContent = "🔄 Memperbarui data...";
+    const res  = await fetch(SHEET_URL);
     const text = await res.text();
-    const rows = parseCSV(text);
+    const rows = Papa.parse(text, { header: false, skipEmptyLines: true }).data.slice(1);
     prosesData(rows);
-    document.getElementById("statusUpdate").innerHTML =
-      "✅ Update terakhir: " + new Date().toLocaleTimeString();
-  } catch(err) {
-    document.getElementById("hasil").innerHTML = "❌ Gagal memuat data";
+    document.getElementById("statusUpdate").textContent =
+      "✅ Update terakhir: " + new Date().toLocaleTimeString("id-ID");
+  } catch {
+    document.getElementById("statusUpdate").textContent = "❌ Gagal memuat data";
   }
 }
 
-// ================= PARSE CSV =================
-// Gunakan header:false agar tidak ada masalah header duplikat
-// (Ket muncul 2x, Skor muncul 2x)
-// Baris pertama = header, dibuang dengan slice(1)
-function parseCSV(text){
-  const parsed = Papa.parse(text, {
-    header: false,
-    skipEmptyLines: true
-  });
-  return parsed.data.slice(1); // buang baris header
+// ─── HELPER ──────────────────────────────────────────
+function belumTuntas(v) {
+  if (v === undefined || v === null) return true;
+  v = v.toString().trim();
+  return (v === "" || v === "0" || v === "-");
 }
 
-// ================= HELPER =================
-function belumTuntas(val){
-  if(val === undefined || val === null) return true;
-  val = val.toString().trim();
-  // kosong, "0", atau "-" dianggap belum tuntas
-  return (val === "" || val === "0" || val === "-");
-}
-
-// ================= PROSES DATA =================
-function prosesData(rows){
+// ─── PROSES DATA ─────────────────────────────────────
+function prosesData(rows) {
   totalSiswa = rows.length;
+  kelasSet.clear();
 
-  const hasil = rows.map(row => {
-    // Akses langsung per indeks — AMAN dari masalah nama duplikat / includes salah
+  semuaData = rows.map(row => {
     const nama  = (row[0] || "").trim() || "-";
     const kelas = (row[1] || "").trim() || "-";
+    if (kelas !== "-") kelasSet.add(kelas);
 
     let kurang = [];
+    if (belumTuntas(row[6]))  kurang.push("Aktivitas 6.6 & 6.7 hal 21");
+    if (belumTuntas(row[7]))  kurang.push("Catatan materi hal 8–21");
 
-    // Kolom [6] = 6.6 dan 6.7
-    if(belumTuntas(row[6])){
-      kurang.push("Aktivitas 6.6 & 6.7 hal 21");
-    }
-
-    // Kolom [7] = Catatan
-    if(belumTuntas(row[7])){
-      kurang.push("Catatan materi hal 8–21");
-    }
-
-    // Kolom [9]=I  [10]=II  [11]=III
     let asesmen = [];
-    if(belumTuntas(row[9]))  asesmen.push("I");
-    if(belumTuntas(row[10])) asesmen.push("II");
-    if(belumTuntas(row[11])) asesmen.push("III");
-
-    if(asesmen.length > 0){
-      kurang.push("Asesmen " + asesmen.join(", ") + " hal 29–31");
-    }
+    if (belumTuntas(row[9]))  asesmen.push("I");
+    if (belumTuntas(row[10])) asesmen.push("II");
+    if (belumTuntas(row[11])) asesmen.push("III");
+    if (asesmen.length > 0)   kurang.push("Asesmen " + asesmen.join(", ") + " hal 29–31");
 
     return { nama, kelas, kurang };
   }).filter(s => s.kurang.length > 0);
 
-  semuaData = hasil;
-  tampilkan(totalSiswa, hasil);
+  buildKelasChips();
+  applyFilter();
 }
 
-// ================= GRAFIK =================
-function renderChart(total, belum){
-  const tuntas = total - belum;
-  const ctx = document.getElementById("chartKelas");
-  if(chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Tuntas", "Belum Tuntas"],
-      datasets: [{
-        data: [tuntas, belum],
-        backgroundColor: ["#28a745", "#dc3545"]
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: "bottom" } }
+// ─── BUILD KELAS CHIPS ────────────────────────────────
+function buildKelasChips() {
+  const container = document.getElementById("kelasChips");
+  // Simpan chip "Semua" yang pertama
+  const allChip = container.querySelector(".chip.all");
+  container.innerHTML = "";
+  container.appendChild(allChip);
+
+  // Sort kelas secara alfanumerik
+  const sorted = [...kelasSet].sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+
+  sorted.forEach(k => {
+    // Hitung berapa siswa belum tuntas di kelas ini
+    const count = semuaData.filter(s => s.kelas === k).length;
+    if (!document.querySelector(`.chip[data-kelas="${CSS.escape(k)}"]`)) {
+      const btn = document.createElement("button");
+      btn.className = "chip";
+      btn.dataset.kelas = k;
+      btn.textContent  = k + (count > 0 ? ` (${count})` : "");
+      btn.onclick = () => setKelas(k, btn);
+      container.appendChild(btn);
+    } else {
+      // Update count
+      const existing = document.querySelector(`.chip[data-kelas="${CSS.escape(k)}"]`);
+      if (existing) existing.textContent = k + (count > 0 ? ` (${count})` : "");
     }
   });
 }
 
-// ================= TAMPIL =================
-function tampilkan(total, data){
+// ─── SET KELAS ────────────────────────────────────────
+function setKelas(kelas, btn) {
+  activeKelas = kelas;
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  btn.classList.add("active");
+  applyFilter();
+}
+
+// ─── SEARCH ──────────────────────────────────────────
+function filterSiswa() {
+  applyFilter();
+}
+
+// ─── APPLY FILTER ────────────────────────────────────
+function applyFilter() {
+  const keyword = (document.getElementById("searchNama").value || "").toLowerCase();
+
+  let filtered = semuaData;
+
+  // Filter by kelas
+  if (activeKelas !== 'semua') {
+    filtered = filtered.filter(s => s.kelas === activeKelas);
+  }
+
+  // Filter by nama
+  if (keyword) {
+    filtered = filtered.filter(s => s.nama.toLowerCase().includes(keyword));
+  }
+
+  // Total for progress: if kelas filter active, use students in that kelas
+  let totalBase;
+  if (activeKelas !== 'semua') {
+    // We don't have all rows anymore, estimate based on all-data ratio
+    // Better: track totalPerKelas in prosesData
+    totalBase = totalPerKelas[activeKelas] || totalSiswa;
+  } else {
+    totalBase = totalSiswa;
+  }
+
+  renderView(totalBase, filtered);
+}
+
+// ─── PER-KELAS TOTAL ─────────────────────────────────
+// We need to also store total (all) per kelas from the full row list.
+// Patch prosesData to also build totalPerKelas:
+let totalPerKelas = {};
+
+const _origProsesData = prosesData;
+prosesData = function(rows) {
+  totalSiswa = rows.length;
+  kelasSet.clear();
+  totalPerKelas = {};
+
+  // Count total per kelas (all rows, not just belum tuntas)
+  rows.forEach(row => {
+    const kelas = (row[1] || "").trim() || "-";
+    if (kelas !== "-") {
+      totalPerKelas[kelas] = (totalPerKelas[kelas] || 0) + 1;
+      kelasSet.add(kelas);
+    }
+  });
+
+  semuaData = rows.map(row => {
+    const nama  = (row[0] || "").trim() || "-";
+    const kelas = (row[1] || "").trim() || "-";
+
+    let kurang = [];
+    if (belumTuntas(row[6]))  kurang.push("Aktivitas 6.6 & 6.7 hal 21");
+    if (belumTuntas(row[7]))  kurang.push("Catatan materi hal 8–21");
+
+    let asesmen = [];
+    if (belumTuntas(row[9]))  asesmen.push("I");
+    if (belumTuntas(row[10])) asesmen.push("II");
+    if (belumTuntas(row[11])) asesmen.push("III");
+    if (asesmen.length > 0)   kurang.push("Asesmen " + asesmen.join(", ") + " hal 29–31");
+
+    return { nama, kelas, kurang };
+  }).filter(s => s.kurang.length > 0);
+
+  buildKelasChips();
+  applyFilter();
+};
+
+// ─── RENDER VIEW ─────────────────────────────────────
+function renderView(totalBase, data) {
+  renderStats(totalBase, data.length);
+  renderChart();
+
+  if (!dataVisible) return;
+
   const div = document.getElementById("hasil");
   div.innerHTML = "";
 
-  renderChart(total, data.length);
-
-  const persen = total > 0
-    ? Math.round(((total - data.length) / total) * 100)
-    : 0;
-
-  document.getElementById("progressBar").style.width = persen + "%";
-
-  div.innerHTML += `
-    <div class="summary">
-      Total belum tuntas: ${data.length} dari ${total}<br>
-      Progress kelas: ${persen}%
-    </div>
-  `;
-
-  if(data.length === 0){
-    div.innerHTML += `<div class="done">Semua siswa sudah tuntas 👍</div>`;
+  if (data.length === 0) {
+    div.innerHTML = `
+      <div class="all-done">
+        <div class="icon">🎉</div>
+        <h3>Semua Siswa Sudah Tuntas!</h3>
+        <p>Tidak ada tugas yang tertunggak${activeKelas !== 'semua' ? ' di ' + activeKelas : ''}.</p>
+      </div>`;
     return;
   }
 
-  // Urutkan: terbanyak kurang dulu, lalu alfabet
-  data.sort((a, b) => {
-    if(b.kurang.length !== a.kurang.length){
-      return b.kurang.length - a.kurang.length;
-    }
-    return a.nama.localeCompare(b.nama);
-  });
+  // Sort: terbanyak kurang dulu, lalu alfabet
+  const sorted = [...data].sort((a, b) =>
+    b.kurang.length !== a.kurang.length
+      ? b.kurang.length - a.kurang.length
+      : a.nama.localeCompare(b.nama)
+  );
 
-  data.forEach((siswa, index) => {
+  sorted.forEach((siswa, i) => {
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "student-card";
+    card.style.animationDelay = (i * 30) + "ms";
     card.innerHTML = `
-      <div class="nama">${index + 1}. ${siswa.nama}</div>
-      <div class="kelas">Kelas: ${siswa.kelas}</div>
-      <div><strong>${siswa.kurang.length} tugas belum tuntas</strong></div>
-      <ul>
-        ${siswa.kurang.map(k => `<li class="kurang">${k}</li>`).join("")}
-      </ul>
+      <div class="s-header">
+        <div>
+          <div class="s-nama">${i + 1}. ${siswa.nama}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+          <span class="s-kelas">${siswa.kelas}</span>
+          <span class="s-badge">${siswa.kurang.length} tugas</span>
+        </div>
+      </div>
+      <div class="s-tasks">
+        ${siswa.kurang.map(k => `<div class="task-item">${k}</div>`).join("")}
+      </div>
     `;
     div.appendChild(card);
   });
 }
 
-// ================= SEARCH =================
-// Gunakan totalSiswa (semua siswa), bukan semuaData.length
-function filterSiswa(){
-  const keyword = document.getElementById("searchNama").value.toLowerCase();
-  const filtered = semuaData.filter(s =>
-    s.nama.toLowerCase().includes(keyword)
-  );
-  tampilkan(totalSiswa, filtered);
+// ─── STATS ───────────────────────────────────────────
+function renderStats(total, belum) {
+  const tuntas = total - belum;
+  const pct    = total > 0 ? Math.round((tuntas / total) * 100) : 0;
+
+  document.getElementById("statTotal").textContent  = total;
+  document.getElementById("statBelum").textContent  = belum;
+  document.getElementById("statTuntas").textContent = Math.max(0, tuntas);
+  document.getElementById("progressPct").textContent = pct + "%";
+  document.getElementById("progressFill").style.width = pct + "%";
 }
-</script>
 
-<footer class="simple-footer">
-  &copy; <span id="tahun"></span>
-  Portal Tugas Informatika Kelas 7 &amp; 9
-  SMP Maarif NU Dukuhwaru
-  <div class="footer-links">By Agus Purwanto</div>
-</footer>
+// ─── CHART (per kelas, belum tuntas) ─────────────────
+function renderChart() {
+  const ctx = document.getElementById("chartKelas");
 
-<script>
-document.getElementById("tahun").innerHTML = new Date().getFullYear();
+  const sorted = [...kelasSet].sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+  const labels = sorted;
+  const dataBelum = sorted.map(k => semuaData.filter(s => s.kelas === k).length);
+  const dataTuntas = sorted.map(k => {
+    const tot = totalPerKelas[k] || 0;
+    return Math.max(0, tot - semuaData.filter(s => s.kelas === k).length);
+  });
+
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Tuntas",
+          data: dataTuntas,
+          backgroundColor: "rgba(6,214,160,0.85)",
+          borderRadius: 6,
+          borderSkipped: false,
+        },
+        {
+          label: "Belum Tuntas",
+          data: dataBelum,
+          backgroundColor: "rgba(239,35,60,0.80)",
+          borderRadius: 6,
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom", labels: { font: { family: 'Nunito', weight: '700' }, boxWidth: 14 } }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { font: { family: 'Nunito', weight: '700' }, color: '#6b7280' }
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { family: 'Nunito' }, color: '#6b7280', precision: 0 }
+        }
+      }
+    }
+  });
+}
 </script>
 </body>
 </html>
